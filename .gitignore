@@ -1,0 +1,27 @@
+.env
+*.env.local
+
+# Node
+node_modules/
+.next/
+out/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Docker volumes / data
+keycloak-data/
+
+# Stray tarballs
+*.tgz
+
+# IDE
+.idea/
+.vscode/
+*.swp

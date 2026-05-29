@@ -1,0 +1,78 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2.4
+    command: start-dev --import-realm
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    ports:
+      - "8080:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && printf 'GET /realms/poc-realm HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q 'HTTP/1.0 200' <&3"]
+      interval: 10s
+      timeout: 8s
+      retries: 20
+      start_period: 40s
+    networks:
+      - poc-net
+
+  fastmcp:
+    build: ./fastmcp-server
+    ports:
+      - "8000:8000"
+    environment:
+      KC_REALM_URL: http://keycloak:8080/realms/poc-realm
+      # KC_ISSUER must match the `iss` claim in tokens (external-facing URL).
+      # Browser tokens have iss=http://localhost:8080/... because Keycloak's
+      # start-dev mode uses the incoming request host as the issuer.
+      KC_ISSUER: http://localhost:8080/realms/poc-realm
+      FASTMCP_BASE_URL: http://fastmcp:8000
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    networks:
+      - poc-net
+
+  opencode:
+    image: node:22-alpine
+    command: sh -c "npx --yes opencode-ai@latest"
+    working_dir: /workspace
+    volumes:
+      - ./nextjs-app/opencode.json:/workspace/opencode.json:ro
+      - ./nextjs-app/skills:/workspace/skills:ro
+    environment:
+      # ANTHROPIC_API_KEY is optional — we use Ollama instead
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-not-needed}
+      MCP_SERVICE_TOKEN: ${MCP_SERVICE_TOKEN:-placeholder}
+    depends_on:
+      - fastmcp
+    networks:
+      - poc-net
+    # Not exposed to host — accessed only via the Next.js proxy
+
+  nextjs-app:
+    build: ./nextjs-app
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      KC_URL: http://keycloak:8080
+      KC_REALM: poc-realm
+      KC_CLIENT_ID: nextjs-client
+      KC_REDIRECT_URI: http://localhost:3000/api/auth/callback
+      OPENCODE_INTERNAL_URL: http://opencode:4321
+      FASTMCP_INTERNAL_URL: http://fastmcp:8000
+      OPENCODE_SERVER_PASSWORD: ${OPENCODE_SERVER_PASSWORD:-changeme}
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      fastmcp:
+        condition: service_started
+    networks:
+      - poc-net
+
+networks:
+  poc-net:
+    driver: bridge
