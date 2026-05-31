@@ -1,0 +1,53 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/your-org/mcp-rag-server
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8000
+
+# ── Persistence ──────────────────────────────────────────────────────────────
+# Enable a PersistentVolumeClaim so ChromaDB data survives pod restarts.
+# Without persistence, all ingested documents are lost on restart.
+persistence:
+  enabled: true
+  storageClass: ""          # "" = cluster default
+  accessMode: ReadWriteOnce
+  size: 2Gi
+  mountPath: /data/chroma   # must match CHROMA_PERSIST_PATH below
+
+# ── Environment ───────────────────────────────────────────────────────────────
+env:
+  PORT: "8000"
+  # ChromaDB storage — must match persistence.mountPath when persistence.enabled
+  CHROMA_PERSIST_PATH: "/data/chroma"
+  # Embedding
+  EMBEDDING_PROVIDER: "ollama"          # "ollama" | "default" (ONNX built-in)
+  OLLAMA_URL: "http://10.0.0.224:11434" # base URL of your Ollama instance
+  OLLAMA_EMBED_MODEL: "qwen2.5:1.5b"   # model used for embeddings
+  MAX_SEARCH_RESULTS: "20"
+  # Auth — set these to enable Keycloak JWT validation
+  KC_REALM_URL: ""     # e.g. http://keycloak:8080/realms/poc-realm
+  KC_ISSUER: ""        # e.g. http://localhost:8080/realms/poc-realm
+  FASTMCP_BASE_URL: "" # e.g. http://mcp-rag-server:8000
+
+# ── Resources ─────────────────────────────────────────────────────────────────
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi   # ChromaDB + embedding model in memory
+  limits:
+    cpu: "2"
+    memory: 2Gi
+
+# ── HPA ───────────────────────────────────────────────────────────────────────
+# Note: with persistence.enabled, only 1 replica is safe (RWO PVC).
+# For multi-replica RAG, use a shared Chroma server or switch to RWX storage.
+hpa:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: mcp-text-utils
+description: MCP tool server for fast, stateless text transformation operations.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

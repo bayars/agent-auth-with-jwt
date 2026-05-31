@@ -1,0 +1,56 @@
+# ── Feature flags ────────────────────────────────────────────────────────────
+httpCaller:
+  enabled: true
+
+fileGenerator:
+  enabled: true
+
+textGenerator:
+  enabled: true
+
+textUtils:
+  enabled: true
+
+# ── Image registry override (applies to all tools) ───────────────────────────
+imageRegistry: "ghcr.io/your-org"
+imageTag: "latest"
+
+# ── OpenCode integration ──────────────────────────────────────────────────────
+# When opencode.enabled=true, a ConfigMap with opencode.json is rendered
+# that lists all enabled tool servers. Mount it into your OpenCode pod.
+opencode:
+  enabled: true
+  # The Release.Name of the sso-mcp-platform (or standalone opencode) deployment
+  # so we can construct correct internal service DNS names.
+  namespace: "default"
+  # Existing MCP servers to preserve in the generated opencode.json
+  existingServers:
+    user-info-server:
+      type: remote
+      url: "http://fastmcp:8000"
+      enabled: true
+      headers:
+        Authorization: "Bearer ${MCP_SERVICE_TOKEN}"
+
+# ── Per-tool image overrides (optional) ──────────────────────────────────────
+mcp-http-caller:
+  image:
+    repository: "ghcr.io/your-org/mcp-http-caller"
+    tag: latest
+  hpa:
+    enabled: false
+
+mcp-file-generator:
+  image:
+    repository: "ghcr.io/your-org/mcp-file-generator"
+    tag: latest
+
+mcp-text-generator:
+  image:
+    repository: "ghcr.io/your-org/mcp-text-generator"
+    tag: latest
+
+mcp-text-utils:
+  image:
+    repository: "ghcr.io/your-org/mcp-text-utils"
+    tag: latest

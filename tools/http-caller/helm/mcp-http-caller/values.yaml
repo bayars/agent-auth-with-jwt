@@ -1,0 +1,34 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/your-org/mcp-http-caller
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8000
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+hpa:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+env:
+  - name: PORT
+    value: "8000"
+  - name: DEFAULT_TIMEOUT_SECONDS
+    value: "30"
+  - name: MAX_RESPONSE_BYTES
+    value: "50000"
+  - name: ALLOWED_DOMAINS
+    value: ""

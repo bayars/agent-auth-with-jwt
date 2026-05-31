@@ -1,0 +1,25 @@
+apiVersion: v2
+name: mcp-tools-stack
+description: >
+  Umbrella chart that deploys all example MCP tool servers and patches
+  the OpenCode configuration to register each one.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+dependencies:
+  - name: mcp-http-caller
+    version: "0.1.0"
+    repository: "file://../http-caller/helm/mcp-http-caller"
+    condition: httpCaller.enabled
+  - name: mcp-file-generator
+    version: "0.1.0"
+    repository: "file://../file-generator/helm/mcp-file-generator"
+    condition: fileGenerator.enabled
+  - name: mcp-text-generator
+    version: "0.1.0"
+    repository: "file://../text-generator/helm/mcp-text-generator"
+    condition: textGenerator.enabled
+  - name: mcp-text-utils
+    version: "0.1.0"
+    repository: "file://../text-utils/helm/mcp-text-utils"
+    condition: textUtils.enabled

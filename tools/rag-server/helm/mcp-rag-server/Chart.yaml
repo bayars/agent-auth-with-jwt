@@ -1,0 +1,9 @@
+apiVersion: v2
+name: mcp-rag-server
+description: >
+  MCP RAG tool server — semantic search, document ingest, and RAG context
+  retrieval backed by ChromaDB and Ollama embeddings. Optionally protected
+  by Keycloak JWT authentication.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

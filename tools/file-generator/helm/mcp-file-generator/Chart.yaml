@@ -1,0 +1,6 @@
+apiVersion: v2
+name: mcp-file-generator
+description: MCP tool server for generating CSV, JSON, Markdown, and ZIP files.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

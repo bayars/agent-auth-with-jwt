@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mcp-rag-server.fullname" . }}
+  labels:
+    {{- include "mcp-rag-server.labels" . | nindent 4 }}
+spec:
+  # With RWO persistence, we can only safely run 1 replica.
+  # Set persistence.enabled=false and use an external Chroma server to scale.
+  replicas: {{ if .Values.persistence.enabled }}1{{ else }}{{ .Values.replicaCount }}{{ end }}
+  selector:
+    matchLabels:
+      {{- include "mcp-rag-server.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mcp-rag-server.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: rag-server
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: mcp
+              containerPort: 8000
+              protocol: TCP
+          env:
+            {{- range $k, $v := .Values.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: chroma-data
+              mountPath: {{ .Values.persistence.mountPath }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: chroma-data
+          persistentVolumeClaim:
+            claimName: {{ include "mcp-rag-server.fullname" . }}-chroma
+      {{- end }}

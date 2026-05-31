@@ -1,0 +1,69 @@
+{{- if .Values.opencode.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-opencode-tools-config
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    helm.sh/hook-weight: "0"
+data:
+  opencode.json: |
+    {
+      "$schema": "https://opencode.ai/config.json",
+      "server": { "port": 4321, "hostname": "0.0.0.0" },
+      "provider": {
+        "ollama": {
+          "name": "Ollama (local)",
+          "options": {
+            "baseURL": "http://10.0.0.224:11434/v1",
+            "apiKey": "ollama"
+          },
+          "models": {
+            "qwen2.5-coder:14b": {
+              "name": "Qwen2.5 Coder 14B",
+              "tool_call": true,
+              "limit": { "context": 32768, "output": 8192 }
+            }
+          }
+        }
+      },
+      "model": "ollama/qwen2.5-coder:14b",
+      "small_model": "ollama/qwen2.5:1.5b",
+      "skills": { "paths": ["/workspace/skills"] },
+      "mcp": {
+        {{- range $name, $cfg := .Values.opencode.existingServers }}
+        {{ $name | quote }}: {{ $cfg | toJson }},
+        {{- end }}
+        {{- if .Values.httpCaller.enabled }}
+        "http-caller": {
+          "type": "remote",
+          "url": "http://{{ .Release.Name }}-mcp-http-caller:8000",
+          "enabled": true
+        },
+        {{- end }}
+        {{- if .Values.fileGenerator.enabled }}
+        "file-generator": {
+          "type": "remote",
+          "url": "http://{{ .Release.Name }}-mcp-file-generator:8000",
+          "enabled": true
+        },
+        {{- end }}
+        {{- if .Values.textGenerator.enabled }}
+        "text-generator": {
+          "type": "remote",
+          "url": "http://{{ .Release.Name }}-mcp-text-generator:8000",
+          "enabled": true
+        },
+        {{- end }}
+        {{- if .Values.textUtils.enabled }}
+        "text-utils": {
+          "type": "remote",
+          "url": "http://{{ .Release.Name }}-mcp-text-utils:8000",
+          "enabled": true
+        }
+        {{- end }}
+      }
+    }
+{{- end }}
