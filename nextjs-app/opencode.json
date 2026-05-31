@@ -43,6 +43,31 @@
       "headers": {
         "Authorization": "Bearer ${MCP_SERVICE_TOKEN}"
       }
+    },
+    "http-caller": {
+      "type": "remote",
+      "url": "http://mcp-http-caller:8000",
+      "enabled": true
+    },
+    "file-generator": {
+      "type": "remote",
+      "url": "http://mcp-file-generator:8000",
+      "enabled": true
+    },
+    "text-generator": {
+      "type": "remote",
+      "url": "http://mcp-text-generator:8000",
+      "enabled": true
+    },
+    "text-utils": {
+      "type": "remote",
+      "url": "http://mcp-text-utils:8000",
+      "enabled": true
+    },
+    "rag": {
+      "type": "remote",
+      "url": "http://mcp-rag-server:8000",
+      "enabled": true
     }
   }
 }
