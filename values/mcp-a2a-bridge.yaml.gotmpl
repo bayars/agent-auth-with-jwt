@@ -1,0 +1,10 @@
+image:
+  repository: {{ requiredEnv "IMAGE_REGISTRY" }}/mcp-a2a-bridge
+  tag: {{ requiredEnv "IMAGE_TAG" }}
+
+env:
+  PORT: "8000"
+  AGENT_REGISTRY: '["http://mcp-rag-server.{{ requiredEnv "NAMESPACE" }}.svc.cluster.local:8000","http://mcp-fastmcp.{{ requiredEnv "NAMESPACE" }}.svc.cluster.local:8000"]'
+  DELEGATE_TIMEOUT_SECONDS: "300"
+  POLL_INTERVAL_SECONDS: "3"
+  HTTP_TIMEOUT_SECONDS: "30"

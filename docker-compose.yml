@@ -75,6 +75,14 @@ services:
     networks:
       - poc-net
 
+  rag-redis:
+    image: redis:7-alpine
+    command: redis-server --save ""    # no persistence — jobs are transient
+    ports:
+      - "6380:6379"                    # host:6380 to avoid conflict with other Redis
+    networks:
+      - poc-net
+
   mcp-rag-server:
     build: ./tools/rag-server
     ports:
@@ -84,11 +92,28 @@ services:
       EMBEDDING_PROVIDER: "ollama"
       OLLAMA_URL: "http://10.0.0.224:11434"
       OLLAMA_EMBED_MODEL: "qwen2.5:1.5b"
-      CHROMA_PERSIST_PATH: ""           # empty = in-memory (set a path for persistence)
+      CHROMA_PERSIST_PATH: ""           # empty = in-memory; set path for persistence
+      REDIS_URL: "redis://rag-redis:6379/0"
+      ASYNC_INGEST_THRESHOLD: "50"
+      JOB_TTL_SECONDS: "3600"
       # Auth (optional) — uncomment to require JWT:
       # KC_REALM_URL: "http://keycloak:8080/realms/poc-realm"
       # KC_ISSUER: "http://localhost:8080/realms/poc-realm"
       # FASTMCP_BASE_URL: "http://mcp-rag-server:8000"
+    depends_on:
+      - rag-redis
+    networks:
+      - poc-net
+
+  mcp-a2a-bridge:
+    build: ./tools/a2a-bridge
+    ports:
+      - "8006:8000"
+    environment:
+      PORT: "8000"
+      AGENT_REGISTRY: '["http://mcp-rag-server:8000","http://fastmcp:8000"]'
+      DELEGATE_TIMEOUT_SECONDS: "300"
+      POLL_INTERVAL_SECONDS: "3"
     networks:
       - poc-net
 
@@ -110,6 +135,7 @@ services:
       - mcp-text-generator
       - mcp-text-utils
       - mcp-rag-server
+      - mcp-a2a-bridge
     networks:
       - poc-net
     # Not exposed to host — accessed only via the Next.js proxy

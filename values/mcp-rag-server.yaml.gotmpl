@@ -1,0 +1,24 @@
+image:
+  repository: {{ requiredEnv "IMAGE_REGISTRY" }}/mcp-rag-server
+  tag: {{ requiredEnv "IMAGE_TAG" }}
+
+persistence:
+  enabled: true
+  size: 5Gi
+
+redis:
+  internal:
+    enabled: true
+
+env:
+  PORT: "8000"
+  CHROMA_PERSIST_PATH: "/data/chroma"
+  EMBEDDING_PROVIDER: "ollama"
+  OLLAMA_URL: "{{ requiredEnv "OLLAMA_URL" }}"
+  OLLAMA_EMBED_MODEL: "{{ requiredEnv "OLLAMA_EMBED_MODEL" }}"
+  MAX_SEARCH_RESULTS: "20"
+  ASYNC_INGEST_THRESHOLD: "50"
+  JOB_TTL_SECONDS: "3600"
+  KC_REALM_URL: "http://keycloak.{{ requiredEnv "NAMESPACE" }}.svc.cluster.local:8080/realms/poc-realm"
+  KC_ISSUER: "{{ requiredEnv "KC_EXTERNAL_URL" }}/realms/poc-realm"
+  FASTMCP_BASE_URL: "http://mcp-rag-server.{{ requiredEnv "NAMESPACE" }}.svc.cluster.local:8000"

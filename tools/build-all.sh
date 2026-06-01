@@ -13,7 +13,7 @@ export IMAGE_TAG="${IMAGE_TAG:-latest}"
 export PUSH="${PUSH:-false}"
 export IMAGE_REGISTRY="${IMAGE_REGISTRY:-ghcr.io/your-org}"
 
-TOOLS=(http-caller file-generator text-generator text-utils rag-server)
+TOOLS=(http-caller file-generator text-generator text-utils rag-server a2a-bridge)
 FAILED=()
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

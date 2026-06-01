@@ -1,0 +1,15 @@
+image:
+  repository: {{ requiredEnv "IMAGE_REGISTRY" }}/mcp-fastmcp
+  tag: {{ requiredEnv "IMAGE_TAG" }}
+
+replicaCount: 2
+
+env:
+  KC_REALM_URL: "http://keycloak.{{ requiredEnv "NAMESPACE" }}.svc.cluster.local:8080/realms/poc-realm"
+  KC_ISSUER: "{{ requiredEnv "KC_EXTERNAL_URL" }}/realms/poc-realm"
+  FASTMCP_BASE_URL: "http://mcp-fastmcp.{{ requiredEnv "NAMESPACE" }}.svc.cluster.local:8000"
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10

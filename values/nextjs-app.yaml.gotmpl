@@ -1,0 +1,27 @@
+image:
+  repository: {{ requiredEnv "IMAGE_REGISTRY" }}/nextjs-app
+  tag: {{ requiredEnv "IMAGE_TAG" }}
+
+replicaCount: 2
+
+ingress:
+  enabled: true
+  host: {{ requiredEnv "APP_HOST" }}
+  tls:
+    enabled: true
+    secretName: tls-nextjs-app
+
+env:
+  KC_URL: "{{ requiredEnv "KC_EXTERNAL_URL" }}"
+  KC_REALM: poc-realm
+  KC_CLIENT_ID: nextjs-client
+  KC_REDIRECT_URI: "https://{{ requiredEnv "APP_HOST" }}/api/auth/callback"
+  OPENCODE_INTERNAL_URL: "http://opencode.{{ requiredEnv "NAMESPACE" }}.svc.cluster.local:4321"
+  FASTMCP_INTERNAL_URL: "http://mcp-fastmcp.{{ requiredEnv "NAMESPACE" }}.svc.cluster.local:8000"
+
+existingSecret: nextjs-secret
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10

@@ -23,3 +23,11 @@ dependencies:
     version: "0.1.0"
     repository: "file://../text-utils/helm/mcp-text-utils"
     condition: textUtils.enabled
+  - name: mcp-rag-server
+    version: "0.1.0"
+    repository: "file://../rag-server/helm/mcp-rag-server"
+    condition: ragServer.enabled
+  - name: mcp-a2a-bridge
+    version: "0.1.0"
+    repository: "file://../a2a-bridge/helm/mcp-a2a-bridge"
+    condition: a2aBridge.enabled

@@ -1,0 +1,6 @@
+image:
+  repository: {{ requiredEnv "IMAGE_REGISTRY" }}/mcp-file-generator
+  tag: {{ requiredEnv "IMAGE_TAG" }}
+env:
+  - name: PORT
+    value: "8000"

@@ -1,0 +1,53 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/your-org/nextjs-app
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: true
+  className: nginx          # or haproxy
+  host: app.example.com
+  tls:
+    enabled: true
+    secretName: tls-nextjs
+  annotations:
+    # WebSocket + long-poll timeouts (required for OpenCode iframe)
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+
+env:
+  NODE_ENV: production
+  KC_URL: ""                  # REQUIRED: http://keycloak:8080
+  KC_REALM: poc-realm
+  KC_CLIENT_ID: nextjs-client
+  KC_REDIRECT_URI: ""         # REQUIRED: https://app.example.com/api/auth/callback
+  OPENCODE_INTERNAL_URL: ""   # REQUIRED: http://opencode:4321
+  FASTMCP_INTERNAL_URL: ""    # REQUIRED: http://mcp-fastmcp:8000
+  OPENCODE_SERVER_PASSWORD: "" # set via existingSecret
+
+existingSecret: nextjs-secret  # keys: OPENCODE_SERVER_PASSWORD, MCP_SERVICE_TOKEN
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+pdb:
+  enabled: true
+  minAvailable: 1

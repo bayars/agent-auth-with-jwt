@@ -180,6 +180,13 @@
       ],
       "realmRoles": ["user", "developer"],
       "clientRoles": {}
+    },
+    {
+      "username": "service-account-fastmcp-service",
+      "enabled": true,
+      "serviceAccountClientId": "fastmcp-service",
+      "realmRoles": ["developer"],
+      "clientRoles": {}
     }
   ],
   "scopeMappings": [],

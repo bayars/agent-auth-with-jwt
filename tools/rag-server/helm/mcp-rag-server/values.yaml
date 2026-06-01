@@ -9,43 +9,54 @@ service:
   type: ClusterIP
   port: 8000
 
-# ── Persistence ──────────────────────────────────────────────────────────────
-# Enable a PersistentVolumeClaim so ChromaDB data survives pod restarts.
-# Without persistence, all ingested documents are lost on restart.
+# ── Persistence (ChromaDB) ────────────────────────────────────────────────────
+# Enable a PVC so ChromaDB data survives pod restarts.
+# With RWO, only 1 replica is safe. Use RWX or an external Chroma server to scale.
 persistence:
   enabled: true
-  storageClass: ""          # "" = cluster default
+  storageClass: ""          # "" = cluster default; "managed-premium" for AKS, "premium-rwo" for GKE
   accessMode: ReadWriteOnce
   size: 2Gi
-  mountPath: /data/chroma   # must match CHROMA_PERSIST_PATH below
+  mountPath: /data/chroma   # must match env.CHROMA_PERSIST_PATH
+
+# ── Redis (job store) ─────────────────────────────────────────────────────────
+# Redis stores background job status so users can poll long-running ingest tasks.
+redis:
+  internal:
+    enabled: true           # deploy a Redis sidecar in the same pod
+                            # set false to use an external Redis (set url below)
+  url: ""                   # used when internal.enabled=false: redis://host:6379/0
+  ttlSeconds: 3600          # jobs expire after this many seconds
+  resources:
+    requests: {cpu: 50m, memory: 64Mi}
+    limits:   {cpu: 200m, memory: 128Mi}
 
 # ── Environment ───────────────────────────────────────────────────────────────
 env:
   PORT: "8000"
-  # ChromaDB storage — must match persistence.mountPath when persistence.enabled
-  CHROMA_PERSIST_PATH: "/data/chroma"
-  # Embedding
+  CHROMA_PERSIST_PATH: "/data/chroma"   # must match persistence.mountPath
   EMBEDDING_PROVIDER: "ollama"          # "ollama" | "default" (ONNX built-in)
-  OLLAMA_URL: "http://10.0.0.224:11434" # base URL of your Ollama instance
-  OLLAMA_EMBED_MODEL: "qwen2.5:1.5b"   # model used for embeddings
+  OLLAMA_URL: "http://10.0.0.224:11434"
+  OLLAMA_EMBED_MODEL: "qwen2.5:1.5b"
   MAX_SEARCH_RESULTS: "20"
-  # Auth — set these to enable Keycloak JWT validation
-  KC_REALM_URL: ""     # e.g. http://keycloak:8080/realms/poc-realm
-  KC_ISSUER: ""        # e.g. http://localhost:8080/realms/poc-realm
-  FASTMCP_BASE_URL: "" # e.g. http://mcp-rag-server:8000
+  ASYNC_INGEST_THRESHOLD: "50"          # docs above this run in background
+  JOB_TTL_SECONDS: "3600"
+  # REDIS_URL is set automatically when redis.internal.enabled=true
+  # Auth — set these to require Keycloak JWT
+  KC_REALM_URL: ""
+  KC_ISSUER: ""
+  FASTMCP_BASE_URL: ""
 
 # ── Resources ─────────────────────────────────────────────────────────────────
 resources:
   requests:
     cpu: 200m
-    memory: 512Mi   # ChromaDB + embedding model in memory
+    memory: 512Mi
   limits:
     cpu: "2"
     memory: 2Gi
 
 # ── HPA ───────────────────────────────────────────────────────────────────────
-# Note: with persistence.enabled, only 1 replica is safe (RWO PVC).
-# For multi-replica RAG, use a shared Chroma server or switch to RWX storage.
 hpa:
   enabled: false
   minReplicas: 1

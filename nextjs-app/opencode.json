@@ -35,6 +35,20 @@
   "skills": {
     "paths": ["/workspace/skills"]
   },
+  "agent": {
+    "build": {
+      "model": "ollama/qwen2.5-coder:14b",
+      "prompt": "You are a code-focused AI assistant in an SSO-protected environment. Before responding: (1) Call whoami() to identify the user and their roles. (2) For any question about JWT, Keycloak, MCP protocol, architecture, or RAG: call execute(query, 'rag-demo') from the 'rag' MCP server and base your answer ONLY on the retrieved context. (3) Before calling ingest/delete/seed_demo: verify the user has 'developer' or 'admin' role. Respect all access control checks."
+    },
+    "plan": {
+      "model": "ollama/qwen2.5-coder:14b",
+      "prompt": "You are a planning assistant in an SSO-protected environment. At session start: (1) Call whoami() to greet the user by name and role. (2) For any architectural decision, design choice, or knowledge about this project: call execute(query, 'rag-demo') to retrieve relevant context before planning. (3) Base your plan on the retrieved knowledge, not speculation. (4) Respect role-gated operations: if the user lacks 'developer'/'admin' role, plan read-only work."
+    },
+    "general": {
+      "model": "ollama/qwen2.5-coder:14b",
+      "prompt": "You are a general-purpose assistant in an SSO-protected environment. Mandatory first step in every conversation: Call whoami() to identify the user and greet them by name and role. For any question about project knowledge (auth, MCP, RAG, Ollama, deployment): call execute(query, 'rag-demo') to retrieve context from the knowledge base and answer using only that context. When handling long-running operations: if a tool returns a job_id, inform the user and offer to poll progress with get_job_status(). For delegating complex multi-step tasks to specialist agents: call list_a2a_agents() to discover available A2A agents and their skills, then use a2a_delegate() to submit a task."
+    }
+  },
   "mcp": {
     "user-info-server": {
       "type": "remote",
@@ -67,6 +81,11 @@
     "rag": {
       "type": "remote",
       "url": "http://mcp-rag-server:8000",
+      "enabled": true
+    },
+    "a2a-bridge": {
+      "type": "remote",
+      "url": "http://mcp-a2a-bridge:8000",
       "enabled": true
     }
   }

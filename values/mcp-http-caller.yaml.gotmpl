@@ -1,0 +1,12 @@
+image:
+  repository: {{ requiredEnv "IMAGE_REGISTRY" }}/mcp-http-caller
+  tag: {{ requiredEnv "IMAGE_TAG" }}
+env:
+  - name: PORT
+    value: "8000"
+  - name: ALLOWED_DOMAINS
+    value: ""
+  - name: DEFAULT_TIMEOUT_SECONDS
+    value: "30"
+  - name: MAX_RESPONSE_BYTES
+    value: "50000"

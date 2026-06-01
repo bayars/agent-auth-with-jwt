@@ -1,0 +1,24 @@
+auth:
+  adminUser: admin
+  adminPassword: {{ requiredEnv "KC_ADMIN_PASSWORD" }}
+
+postgresql:
+  enabled: false
+
+externalDatabase:
+  host: {{ requiredEnv "KC_DB_HOST" }}
+  port: 5432
+  database: keycloak
+  user: keycloak
+  existingSecret: keycloak-db-secret
+
+replicaCount: 2
+
+extraEnvVars:
+  - name: KC_HOSTNAME
+    value: {{ requiredEnv "KC_EXTERNAL_URL" }}
+  - name: KC_HOSTNAME_STRICT
+    value: "false"
+
+service:
+  type: ClusterIP

@@ -10,7 +10,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY store.py main.py ./
+COPY store.py main.py job_store.py ./
 
 # Optional: pre-download the default ONNX embedding model so the first
 # request doesn't stall. Only runs when EMBEDDING_PROVIDER=default.

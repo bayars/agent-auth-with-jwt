@@ -25,3 +25,5 @@ keycloak-data/
 .idea/
 .vscode/
 *.swp
+.helm.env
+values/*.yaml

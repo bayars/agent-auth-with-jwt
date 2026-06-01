@@ -5,8 +5,6 @@ metadata:
   labels:
     {{- include "mcp-rag-server.labels" . | nindent 4 }}
 spec:
-  # With RWO persistence, we can only safely run 1 replica.
-  # Set persistence.enabled=false and use an external Chroma server to scale.
   replicas: {{ if .Values.persistence.enabled }}1{{ else }}{{ .Values.replicaCount }}{{ end }}
   selector:
     matchLabels:
@@ -15,8 +13,11 @@ spec:
     metadata:
       labels:
         {{- include "mcp-rag-server.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ .Values | toJson | sha256sum }}
     spec:
       containers:
+        # ── Main RAG server ──────────────────────────────────────────────────
         - name: rag-server
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -29,6 +30,15 @@ spec:
             - name: {{ $k }}
               value: {{ $v | quote }}
             {{- end }}
+            {{- if .Values.redis.internal.enabled }}
+            - name: REDIS_URL
+              value: "redis://localhost:6379/0"
+            {{- else if .Values.redis.url }}
+            - name: REDIS_URL
+              value: {{ .Values.redis.url | quote }}
+            {{- end }}
+            - name: JOB_TTL_SECONDS
+              value: {{ .Values.redis.ttlSeconds | quote }}
           {{- if .Values.persistence.enabled }}
           volumeMounts:
             - name: chroma-data
@@ -49,6 +59,25 @@ spec:
             periodSeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+
+        # ── Redis sidecar (job store) ────────────────────────────────────────
+        {{- if .Values.redis.internal.enabled }}
+        - name: redis
+          image: redis:7-alpine
+          args: ["--save", ""]   # disable persistence — jobs are transient
+          ports:
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+          livenessProbe:
+            exec:
+              command: [redis-cli, ping]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+        {{- end }}
+
       {{- if .Values.persistence.enabled }}
       volumes:
         - name: chroma-data

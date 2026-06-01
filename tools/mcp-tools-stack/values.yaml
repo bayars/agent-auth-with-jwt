@@ -11,6 +11,12 @@ textGenerator:
 textUtils:
   enabled: true
 
+ragServer:
+  enabled: true
+
+a2aBridge:
+  enabled: true
+
 # ── Image registry override (applies to all tools) ───────────────────────────
 imageRegistry: "ghcr.io/your-org"
 imageTag: "latest"
@@ -53,4 +59,20 @@ mcp-text-generator:
 mcp-text-utils:
   image:
     repository: "ghcr.io/your-org/mcp-text-utils"
+    tag: latest
+
+mcp-rag-server:
+  image:
+    repository: "ghcr.io/your-org/mcp-rag-server"
+    tag: latest
+  persistence:
+    enabled: true
+    size: 5Gi
+  redis:
+    internal:
+      enabled: true
+
+mcp-a2a-bridge:
+  image:
+    repository: "ghcr.io/your-org/mcp-a2a-bridge"
     tag: latest

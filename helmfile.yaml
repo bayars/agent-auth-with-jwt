@@ -1,0 +1,112 @@
+---
+# Helmfile — deploys the entire SSO MCP Platform.
+#
+# Prerequisites:
+#   - helmfile CLI  (brew install helmfile  OR  https://helmfile.readthedocs.io)
+#   - helm CLI      (brew install helm)
+#   - kubectl configured to the target cluster
+#   - .helm.env filled in (copy from .helm.env.example)
+#
+# Usage:
+#   source .helm.env && helmfile sync           # deploy everything
+#   source .helm.env && helmfile diff           # preview changes
+#   source .helm.env && helmfile template       # render manifests (no cluster needed)
+#   source .helm.env && helmfile destroy        # teardown (WARNING: deletes PVCs)
+#
+# Or use the wrapper: bash deploy.sh  (handles build + push + sync)
+
+repositories:
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
+  - name: cert-manager
+    url: https://charts.jetstack.io
+
+helmDefaults:
+  atomic: true
+  cleanupOnFail: true
+  timeout: 600
+  createNamespace: true
+  historyMax: 5
+  wait: true
+
+releases:
+
+  # ── 1. Certificate manager (once per cluster) ─────────────────────────────
+  - name: cert-manager
+    namespace: cert-manager
+    chart: cert-manager/cert-manager
+    version: "~1.17.0"
+    values:
+      - installCRDs: true
+        global:
+          leaderElection:
+            namespace: cert-manager
+
+  # ── 2. Keycloak (Identity Provider) ──────────────────────────────────────
+  - name: keycloak
+    namespace: {{ requiredEnv "NAMESPACE" }}
+    chart: bitnami/keycloak
+    version: "~24.0.0"
+    needs:
+      - cert-manager/cert-manager
+    values:
+      - ./values/keycloak.yaml.gotmpl
+
+  # ── 3. FastMCP (JWT-authenticated MCP server) ─────────────────────────────
+  - name: fastmcp
+    namespace: {{ requiredEnv "NAMESPACE" }}
+    chart: ./fastmcp-server/helm/mcp-fastmcp
+    needs:
+      - {{ requiredEnv "NAMESPACE" }}/keycloak
+    values:
+      - ./values/fastmcp.yaml.gotmpl
+
+  # ── 4. Next.js frontend ───────────────────────────────────────────────────
+  - name: nextjs-app
+    namespace: {{ requiredEnv "NAMESPACE" }}
+    chart: ./nextjs-app/helm/nextjs-app
+    needs:
+      - {{ requiredEnv "NAMESPACE" }}/keycloak
+      - {{ requiredEnv "NAMESPACE" }}/fastmcp
+    values:
+      - ./values/nextjs-app.yaml.gotmpl
+
+  # ── 5. MCP tool servers (independent, no ordering required) ───────────────
+  - name: mcp-http-caller
+    namespace: {{ requiredEnv "NAMESPACE" }}
+    chart: ./tools/http-caller/helm/mcp-http-caller
+    values:
+      - ./values/mcp-http-caller.yaml.gotmpl
+
+  - name: mcp-file-generator
+    namespace: {{ requiredEnv "NAMESPACE" }}
+    chart: ./tools/file-generator/helm/mcp-file-generator
+    values:
+      - ./values/mcp-file-generator.yaml.gotmpl
+
+  - name: mcp-text-generator
+    namespace: {{ requiredEnv "NAMESPACE" }}
+    chart: ./tools/text-generator/helm/mcp-text-generator
+    values:
+      - ./values/mcp-text-generator.yaml.gotmpl
+
+  - name: mcp-text-utils
+    namespace: {{ requiredEnv "NAMESPACE" }}
+    chart: ./tools/text-utils/helm/mcp-text-utils
+    values:
+      - ./values/mcp-text-utils.yaml.gotmpl
+
+  - name: mcp-rag-server
+    namespace: {{ requiredEnv "NAMESPACE" }}
+    chart: ./tools/rag-server/helm/mcp-rag-server
+    values:
+      - ./values/mcp-rag-server.yaml.gotmpl
+
+  - name: mcp-a2a-bridge
+    namespace: {{ requiredEnv "NAMESPACE" }}
+    chart: ./tools/a2a-bridge/helm/mcp-a2a-bridge
+    needs:
+      - {{ requiredEnv "NAMESPACE" }}/mcp-rag-server
+      - {{ requiredEnv "NAMESPACE" }}/fastmcp
+    values:
+      - ./values/mcp-a2a-bridge.yaml.gotmpl

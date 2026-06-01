@@ -1,0 +1,28 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/your-org/mcp-a2a-bridge
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8000
+
+env:
+  PORT: "8000"
+  # JSON array of A2A agent base URLs (internal K8s DNS)
+  AGENT_REGISTRY: '["http://mcp-rag-server:8000","http://mcp-fastmcp:8000"]'
+  DELEGATE_TIMEOUT_SECONDS: "300"
+  POLL_INTERVAL_SECONDS: "3"
+  HTTP_TIMEOUT_SECONDS: "30"
+
+resources:
+  requests: {cpu: 100m, memory: 128Mi}
+  limits:   {cpu: "1", memory: 256Mi}
+
+hpa:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
